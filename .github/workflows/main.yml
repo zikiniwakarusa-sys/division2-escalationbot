@@ -1,189 +1,28 @@
-import requests
-import json
-import os
-from datetime import datetime, timedelta, timezone
+name: division2 bot
 
-DATA_URL = "https://hi-dep.github.io/division2/data/event/index.json"
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
 
-CONFIG_FILE = "config.json"
-STATE_FILE = "last.json"
+permissions:
+  contents: write
 
-JST = timezone(timedelta(hours=9))
+jobs:
+  run:
+    runs-on: ubuntu-latest
 
-# ------------------------
-# ミッション日本語化
-# ------------------------
-MISSION_JA = {
-    "Grand Washington Hotel": "グランドワシントンホテル",
-    "ViewPoint Museum": "ビューポイント博物館",
-    "American History Museum": "アメリカ歴史博物館",
-    "Air & Space Museum": "航空宇宙博物館",
-    "Jefferson Plaza": "ジェファーソンプラザ",
-    "Bank Headquarters": "銀行本部",
-    "DCD Headquarters": "DCD本部",
-    "Lincoln Memorial": "リンカーン記念堂",
-    "Potomac Event Center": "ポトマックイベントセンター",
-    "Jefferson Trade Center": "ジェファーソントレードセンター",
-    "Space Administration HQ": "宇宙局本部",
-    "Federal Emergency Bunker": "フェデラルエマージェンシーバンカー",
-    "Camp White Oak": "キャンプホワイトオーク",
-    "The Pentagon": "ペンタゴン",
-    "DARPA Research Labs": "DARPA",
-    "Coney Island Ballpark": "コニーアイランド球場",
-    "Coney Island Amusement Park": "コニーアイランド遊園地",
-    "The Tombs": "墓所",
-    "Stranded Tanker": "座礁タンカー",
-    "Pathway Park": "パスウェイパーク",
-    "Wall Street": "ウォール街",
-    "Liberty Island": "リバティ島",
-    "CERA Clinic": "CERA診療所",
-    "DUMBO Skate Park": "ダンボ・スケートパーク",
-    "H5 Refinery": "H5精製所",
-    "Clarke Street Hotel": "クラーク・ストリート",
-    "Bridge Park Pier": "ブリッジパーク埠頭",
-    "The Art Museum": "美術館",
-    "Army Terminal": "陸軍ターミナル",
-    "District Union Arena": "ディストリクトユニオンアリーナ",
-    "Roosevelt Island": "ルーズベルト島",
-    "Capitol Building": "キャピトルビル",
-    "Tidal Basin": "タイダルベイスン",
-    "Manning National Zoo": "マニング国立動物園",
-}
+    steps:
+      - uses: actions/checkout@v3
 
-# ------------------------
-# 17時リセット（ゲーム仕様）
-# ------------------------
-def get_active_datetime():
-    now = datetime.now(JST)
-    reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
+      - run: pip install requests
 
-    if now < reset:
-        active = now - timedelta(days=1)
-    else:
-        active = now
+      - run: python script.py
 
-    return active
-
-def format_jst(dt):
-    return dt.strftime("%Y/%m/%d %H:%M JST")
-
-# ------------------------
-def load_config():
-    with open(CONFIG_FILE) as f:
-        return json.load(f)
-
-def load_last():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE) as f:
-            return json.load(f)
-    return {}
-
-def save_last(data):
-    with open(STATE_FILE, "w") as f:
-        json.dump(data, f)
-
-# ------------------------
-# データ取得
-# ------------------------
-def fetch_data():
-    res = requests.get(DATA_URL)
-    data = res.json()
-
-    active = get_active_datetime().strftime("%Y-%m-%d")
-    result = {}
-
-    for section_name, entries in data.items():
-        section_pairs = []
-
-        for entry in entries:
-            missions = entry.get("missions", [])
-
-            target_loot = None
-            for d in entry.get("target_loot_by_day", []):
-                if d.get("day") == active:
-                    target_loot = d.get("target_loot", [])
-                    break
-
-            if not target_loot:
-                continue
-
-            for i in range(min(len(missions), len(target_loot))):
-                m = MISSION_JA.get(missions[i], missions[i])
-                l = target_loot[i]
-
-                if not l:
-                    continue
-
-                section_pairs.append((m, l))
-
-        if section_pairs:
-            result[section_name] = section_pairs
-
-    return result
-
-# ------------------------
-# UI整形（ゲーム風）
-# ------------------------
-def format_section(title, pairs):
-    lines = []
-    lines.append("```")
-    lines.append("No | ミッション               | ターゲット")
-    lines.append("---+-------------------------+-----------")
-
-    for i, (m, l) in enumerate(pairs, 1):
-        lines.append(f"{i:>2} | {m[:20]:<20} | {l}")
-
-    lines.append("```")
-
-    return {
-        "name": f"🎯 {title}",
-        "value": "\n".join(lines),
-        "inline": False
-    }
-
-# ------------------------
-# 投稿
-# ------------------------
-def post(webhook, sections):
-    now = datetime.now(JST)
-    active = get_active_datetime()
-
-    if not sections:
-        return
-
-    embed = {
-        "title": "🟧 Division 2 デイリーターゲット",
-        "description": "```diff\n+ TARGETED LOOT ACTIVE\n```",
-        "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
-        "color": 0xFF6A00,
-        "fields": [],
-        "footer": {
-            "text": f"更新: {format_jst(now)} / リセット基準: {format_jst(active.replace(hour=17))}"
-        }
-    }
-
-    for section, pairs in sections.items():
-        embed["fields"].append(format_section(section, pairs))
-
-    requests.post(webhook, json={"embeds": [embed]})
-
-# ------------------------
-# メイン
-# ------------------------
-def main():
-    config = load_config()
-    sections = fetch_data()
-
-    current = {"sections": sections}
-    last = load_last()
-
-    if current != last and sections:
-        for server in config["servers"]:
-            post(server["webhook"], sections)
-
-        save_last(current)
-    else:
-        print("変更なし or データなし")
-
-if __name__ == "__main__":
-    main()
+      - name: Save state
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@example.com"
+          git add last.json
+          git commit -m "update" || echo "no change"
+          git push
