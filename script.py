@@ -8,12 +8,21 @@ DATA_URL = "https://hi-dep.github.io/division2/data/event/index.json"
 CONFIG_FILE = "config.json"
 STATE_FILE = "last.json"
 
-# JST
 JST = timezone(timedelta(hours=9))
 
-def today_jst():
-    return datetime.now(JST).strftime("%Y-%m-%d")
+# ------------------------
+# 17時リセット対応の日付
+# ------------------------
+def get_active_date():
+    now = datetime.now(JST)
+    reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
 
+    if now < reset:
+        now -= timedelta(days=1)
+
+    return now.strftime("%Y-%m-%d")
+
+# ------------------------
 def load_config():
     with open(CONFIG_FILE) as f:
         return json.load(f)
@@ -35,44 +44,51 @@ def fetch_data():
     res = requests.get(DATA_URL)
     data = res.json()
 
-    today = today_jst()
+    target_day = get_active_date()
     pairs = []
 
     for section_name, entries in data.items():
         for entry in entries:
             missions = entry.get("missions", [])
 
-            # 今日のターゲット装備を探す
-            target_loot = []
+            # 日付一致のlootだけ取る
+            target_loot = None
             for day_data in entry.get("target_loot_by_day", []):
-                if day_data.get("day") == today:
+                if day_data.get("day") == target_day:
                     target_loot = day_data.get("target_loot", [])
                     break
 
-            # ミッションと装備を紐付け
-            for i in range(len(missions)):
-                mission = missions[i] if i < len(missions) else "不明"
-                loot = target_loot[i] if i < len(target_loot) else "なし"
+            # 一致しなければスキップ（←重要）
+            if not target_loot:
+                continue
+
+            # ミッションと紐付け
+            for i in range(min(len(missions), len(target_loot))):
+                mission = missions[i]
+                loot = target_loot[i]
+
+                if not loot:
+                    continue
 
                 pairs.append({
                     "mission": mission,
                     "loot": loot
                 })
 
-    return pairs[:10]  # 上位10件
+    return pairs[:10]
 
 # ------------------------
 # 投稿
 # ------------------------
 def post(webhook, pairs):
-    now = today_jst()
+    now = get_active_date()
+
+    if not pairs:
+        return  # ← 何も送らない
 
     description = ""
     for i, p in enumerate(pairs, 1):
         description += f"{i}. {p['mission']} → {p['loot']}\n"
-
-    if not description:
-        description = "データなし"
 
     embed = {
         "title": "🎯 Division2 デイリー情報",
@@ -87,7 +103,7 @@ def post(webhook, pairs):
     requests.post(webhook, json={"embeds": [embed]})
 
 # ------------------------
-# メイン処理
+# メイン
 # ------------------------
 def main():
     config = load_config()
@@ -96,13 +112,13 @@ def main():
     current = {"pairs": pairs}
     last = load_last()
 
-    if current != last:
+    if current != last and pairs:
         for server in config["servers"]:
             post(server["webhook"], pairs)
 
         save_last(current)
     else:
-        print("変更なし")
+        print("変更なし or データなし")
 
 if __name__ == "__main__":
     main()
