@@ -51,14 +51,21 @@ MISSION_JA = {
 }
 
 # ------------------------
-# 17時リセット
+# 17時リセット（ゲーム仕様）
 # ------------------------
-def get_active_date():
+def get_active_datetime():
     now = datetime.now(JST)
     reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
+
     if now < reset:
-        now -= timedelta(days=1)
-    return now.strftime("%Y-%m-%d")
+        active = now - timedelta(days=1)
+    else:
+        active = now
+
+    return active
+
+def format_jst(dt):
+    return dt.strftime("%Y/%m/%d %H:%M JST")
 
 # ------------------------
 def load_config():
@@ -76,13 +83,13 @@ def save_last(data):
         json.dump(data, f)
 
 # ------------------------
-# データ取得（セクション単位）
+# データ取得
 # ------------------------
 def fetch_data():
     res = requests.get(DATA_URL)
     data = res.json()
 
-    target_day = get_active_date()
+    active = get_active_datetime().strftime("%Y-%m-%d")
     result = {}
 
     for section_name, entries in data.items():
@@ -93,7 +100,7 @@ def fetch_data():
 
             target_loot = None
             for d in entry.get("target_loot_by_day", []):
-                if d.get("day") == target_day:
+                if d.get("day") == active:
                     target_loot = d.get("target_loot", [])
                     break
 
@@ -115,40 +122,48 @@ def fetch_data():
     return result
 
 # ------------------------
-# 表っぽく整形
+# UI整形（ゲーム風）
 # ------------------------
-def format_table(pairs):
+def format_section(title, pairs):
     lines = []
+    lines.append("```")
+    lines.append("No | ミッション               | ターゲット")
+    lines.append("---+-------------------------+-----------")
+
     for i, (m, l) in enumerate(pairs, 1):
-        # 固定幅っぽく整形
-        lines.append(f"{i:>2}. {m:<20} → {l}")
-    return "```" + "\n".join(lines) + "```"
+        lines.append(f"{i:>2} | {m[:20]:<20} | {l}")
+
+    lines.append("```")
+
+    return {
+        "name": f"🎯 {title}",
+        "value": "\n".join(lines),
+        "inline": False
+    }
 
 # ------------------------
 # 投稿
 # ------------------------
 def post(webhook, sections):
-    now = get_active_date()
+    now = datetime.now(JST)
+    active = get_active_datetime()
 
     if not sections:
         return
 
     embed = {
-        "title": "🎯 Division2 デイリー情報",
+        "title": "🟧 Division 2 デイリーターゲット",
+        "description": "```diff\n+ TARGETED LOOT ACTIVE\n```",
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
-        "color": 16753920,
+        "color": 0xFF6A00,
         "fields": [],
         "footer": {
-            "text": f"更新日: {now}"
+            "text": f"更新: {format_jst(now)} / リセット基準: {format_jst(active.replace(hour=17))}"
         }
     }
 
     for section, pairs in sections.items():
-        embed["fields"].append({
-            "name": f"📍 {section}",
-            "value": format_table(pairs),
-            "inline": False
-        })
+        embed["fields"].append(format_section(section, pairs))
 
     requests.post(webhook, json={"embeds": [embed]})
 
