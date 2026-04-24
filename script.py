@@ -11,7 +11,47 @@ STATE_FILE = "last.json"
 JST = timezone(timedelta(hours=9))
 
 # ------------------------
-# 17時リセット対応の日付
+# ミッション日本語化（event.jsから抜粋）
+# ------------------------
+MISSION_JA = {
+    "Grand Washington Hotel": "グランドワシントンホテル",
+    "ViewPoint Museum": "ビューポイント博物館",
+    "American History Museum": "アメリカ歴史博物館",
+    "Air & Space Museum": "航空宇宙博物館",
+    "Jefferson Plaza": "ジェファーソンプラザ",
+    "Bank Headquarters": "銀行本部",
+    "DCD Headquarters": "DCD本部",
+    "Lincoln Memorial": "リンカーン記念堂",
+    "Potomac Event Center": "ポトマックイベントセンター",
+    "Jefferson Trade Center": "ジェファーソントレードセンター",
+    "Space Administration HQ": "宇宙局本部",
+    "Federal Emergency Bunker": "フェデラルエマージェンシーバンカー",
+    "Camp White Oak": "キャンプホワイトオーク",
+    "The Pentagon": "ペンタゴン",
+    "DARPA Research Labs": "DARPA",
+    "Coney Island Ballpark": "コニーアイランド球場",
+    "Coney Island Amusement Park": "コニーアイランド遊園地",
+    "The Tombs": "墓所",
+    "Stranded Tanker": "座礁タンカー",
+    "Pathway Park": "パスウェイパーク",
+    "Wall Street": "ウォール街",
+    "Liberty Island": "リバティ島",
+    "CERA Clinic": "CERA診療所",
+    "DUMBO Skate Park": "ダンボ・スケートパーク",
+    "H5 Refinery": "H5精製所",
+    "Clarke Street Hotel": "クラーク・ストリート",
+    "Bridge Park Pier": "ブリッジパーク埠頭",
+    "The Art Museum": "美術館",
+    "Army Terminal": "陸軍ターミナル",
+    "District Union Arena": "ディストリクトユニオンアリーナ",
+    "Roosevelt Island": "ルーズベルト島",
+    "Capitol Building": "キャピトルビル",
+    "Tidal Basin": "タイダルベイスン",
+    "Manning National Zoo": "マニング国立動物園",
+}
+
+# ------------------------
+# 17時リセット
 # ------------------------
 def get_active_date():
     now = datetime.now(JST)
@@ -38,7 +78,7 @@ def save_last(data):
         json.dump(data, f)
 
 # ------------------------
-# データ取得（完全修正版）
+# データ取得
 # ------------------------
 def fetch_data():
     res = requests.get(DATA_URL)
@@ -51,21 +91,21 @@ def fetch_data():
         for entry in entries:
             missions = entry.get("missions", [])
 
-            # 日付一致のlootだけ取る
             target_loot = None
             for day_data in entry.get("target_loot_by_day", []):
                 if day_data.get("day") == target_day:
                     target_loot = day_data.get("target_loot", [])
                     break
 
-            # 一致しなければスキップ（←重要）
             if not target_loot:
                 continue
 
-            # ミッションと紐付け
             for i in range(min(len(missions), len(target_loot))):
                 mission = missions[i]
                 loot = target_loot[i]
+
+                # 日本語化
+                mission = MISSION_JA.get(mission, mission)
 
                 if not loot:
                     continue
@@ -84,14 +124,14 @@ def post(webhook, pairs):
     now = get_active_date()
 
     if not pairs:
-        return  # ← 何も送らない
+        return
 
     description = ""
     for i, p in enumerate(pairs, 1):
         description += f"{i}. {p['mission']} → {p['loot']}\n"
 
     embed = {
-        "title": "🎯 Division2 デイリー情報",
+        "title": "🎯 Division2 エスカレーション 目標アイテム",
         "description": description,
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
         "color": 16753920,
