@@ -11,7 +11,7 @@ STATE_FILE = "last.json"
 JST = timezone(timedelta(hours=9))
 
 # ------------------------
-# ミッション日本語化（event.jsから抜粋）
+# ミッション日本語化
 # ------------------------
 MISSION_JA = {
     "Grand Washington Hotel": "グランドワシントンホテル",
@@ -56,10 +56,8 @@ MISSION_JA = {
 def get_active_date():
     now = datetime.now(JST)
     reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
-
     if now < reset:
         now -= timedelta(days=1)
-
     return now.strftime("%Y-%m-%d")
 
 # ------------------------
@@ -78,67 +76,79 @@ def save_last(data):
         json.dump(data, f)
 
 # ------------------------
-# データ取得
+# データ取得（セクション単位）
 # ------------------------
 def fetch_data():
     res = requests.get(DATA_URL)
     data = res.json()
 
     target_day = get_active_date()
-    pairs = []
+    result = {}
 
     for section_name, entries in data.items():
+        section_pairs = []
+
         for entry in entries:
             missions = entry.get("missions", [])
 
             target_loot = None
-            for day_data in entry.get("target_loot_by_day", []):
-                if day_data.get("day") == target_day:
-                    target_loot = day_data.get("target_loot", [])
+            for d in entry.get("target_loot_by_day", []):
+                if d.get("day") == target_day:
+                    target_loot = d.get("target_loot", [])
                     break
 
             if not target_loot:
                 continue
 
             for i in range(min(len(missions), len(target_loot))):
-                mission = missions[i]
-                loot = target_loot[i]
+                m = MISSION_JA.get(missions[i], missions[i])
+                l = target_loot[i]
 
-                # 日本語化
-                mission = MISSION_JA.get(mission, mission)
-
-                if not loot:
+                if not l:
                     continue
 
-                pairs.append({
-                    "mission": mission,
-                    "loot": loot
-                })
+                section_pairs.append((m, l))
 
-    return pairs[:10]
+        if section_pairs:
+            result[section_name] = section_pairs
+
+    return result
+
+# ------------------------
+# 表っぽく整形
+# ------------------------
+def format_table(pairs):
+    lines = []
+    for i, (m, l) in enumerate(pairs, 1):
+        # 固定幅っぽく整形
+        lines.append(f"{i:>2}. {m:<20} → {l}")
+    return "```" + "\n".join(lines) + "```"
 
 # ------------------------
 # 投稿
 # ------------------------
-def post(webhook, pairs):
+def post(webhook, sections):
     now = get_active_date()
 
-    if not pairs:
+    if not sections:
         return
-
-    description = ""
-    for i, p in enumerate(pairs, 1):
-        description += f"{i}. {p['mission']} → {p['loot']}\n"
 
     embed = {
         "title": "🎯 Division2 デイリー情報",
-        "description": description,
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
         "color": 16753920,
+        "fields": [],
         "footer": {
             "text": f"更新日: {now}"
         }
     }
+
+    for section, pairs in sections.items():
+        embed["fields"].append({
+            "name": f"📍 {section}",
+            "value": format_table(pairs),
+            "inline": False
+        })
 
     requests.post(webhook, json={"embeds": [embed]})
 
@@ -147,14 +157,14 @@ def post(webhook, pairs):
 # ------------------------
 def main():
     config = load_config()
-    pairs = fetch_data()
+    sections = fetch_data()
 
-    current = {"pairs": pairs}
+    current = {"sections": sections}
     last = load_last()
 
-    if current != last and pairs:
+    if current != last and sections:
         for server in config["servers"]:
-            post(server["webhook"], pairs)
+            post(server["webhook"], sections)
 
         save_last(current)
     else:
