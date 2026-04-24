@@ -5,24 +5,13 @@ on:
     - cron: "0 8 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
   run:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4  # ←ここだけ変更
 
       - run: pip install requests
 
       - run: python script.py
-
-      - name: Save state
-        run: |
-          git config --global user.name "bot"
-          git config --global user.email "bot@example.com"
-          git add last.json
-          git commit -m "update" || echo "no change"
-          git push
