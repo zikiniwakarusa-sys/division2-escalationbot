@@ -1,12 +1,9 @@
 import requests
 import json
 import os
-import re
 from datetime import datetime, timedelta, timezone
 
 DATA_URL = "https://hi-dep.github.io/division2/data/event/index.json"
-I18N_CATEGORIES = "https://hi-dep.github.io/division2/data/i18n/categories.json"
-I18N_ALIASES = "https://hi-dep.github.io/division2/data/i18n/aliases.json"
 
 CONFIG_FILE = "config.json"
 STATE_FILE = "last.json"
@@ -14,63 +11,51 @@ STATE_FILE = "last.json"
 JST = timezone(timedelta(hours=9))
 
 # ------------------------
-# ミッション日本語
+# ミッション日本語化（event.jsから抜粋）
 # ------------------------
 MISSION_JA = {
-    "The Art Museum": "美術館",
     "Grand Washington Hotel": "グランドワシントンホテル",
+    "ViewPoint Museum": "ビューポイント博物館",
     "American History Museum": "アメリカ歴史博物館",
+    "Air & Space Museum": "航空宇宙博物館",
+    "Jefferson Plaza": "ジェファーソンプラザ",
+    "Bank Headquarters": "銀行本部",
+    "DCD Headquarters": "DCD本部",
+    "Lincoln Memorial": "リンカーン記念堂",
+    "Potomac Event Center": "ポトマックイベントセンター",
+    "Jefferson Trade Center": "ジェファーソントレードセンター",
+    "Space Administration HQ": "宇宙局本部",
+    "Federal Emergency Bunker": "フェデラルエマージェンシーバンカー",
+    "Camp White Oak": "キャンプホワイトオーク",
+    "The Pentagon": "ペンタゴン",
+    "DARPA Research Labs": "DARPA",
+    "Coney Island Ballpark": "コニーアイランド球場",
+    "Coney Island Amusement Park": "コニーアイランド遊園地",
+    "The Tombs": "墓所",
+    "Stranded Tanker": "座礁タンカー",
+    "Pathway Park": "パスウェイパーク",
+    "Wall Street": "ウォール街",
+    "Liberty Island": "リバティ島",
+    "CERA Clinic": "CERA診療所",
+    "DUMBO Skate Park": "ダンボ・スケートパーク",
+    "H5 Refinery": "H5精製所",
+    "Clarke Street Hotel": "クラーク・ストリート",
+    "Bridge Park Pier": "ブリッジパーク埠頭",
+    "The Art Museum": "美術館",
+    "Army Terminal": "陸軍ターミナル",
+    "District Union Arena": "ディストリクトユニオンアリーナ",
+    "Roosevelt Island": "ルーズベルト島",
+    "Capitol Building": "キャピトルビル",
+    "Tidal Basin": "タイダルベイスン",
+    "Manning National Zoo": "マニング国立動物園",
 }
-
-# ------------------------
-# 初期化（i18n取得）
-# ------------------------
-def load_i18n():
-    categories = requests.get(I18N_CATEGORIES).json()
-    aliases = requests.get(I18N_ALIASES).json()
-    return categories, aliases
-
-I18N_CAT, I18N_ALIAS = load_i18n()
-
-# ------------------------
-# normalizeKey（JS再現）
-# ------------------------
-def normalize_key(s):
-    return re.sub(r'[^a-z0-9]+', '', s.lower())
-
-# ------------------------
-# targetlootキー解決
-# ------------------------
-def resolve_key(name):
-    key = normalize_key(name)
-    return I18N_ALIAS.get(key, key)
-
-# ------------------------
-# 日本語変換
-# ------------------------
-def translate_loot(name):
-    key = resolve_key(name)
-
-    # weapon
-    if key in I18N_CAT.get("weapon_type", {}):
-        return I18N_CAT["weapon_type"][key]
-
-    # gear
-    if key in I18N_CAT.get("gear_slot", {}):
-        return I18N_CAT["gear_slot"][key]
-
-    # brand
-    if key in I18N_CAT.get("brands", {}):
-        return I18N_CAT["brands"][key]
-
-    return name  # fallback
 
 # ------------------------
 # 17時リセット
 # ------------------------
 def get_active_date():
     now = datetime.now(JST)
-    reset = now.replace(hour=17, minute=0)
+    reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
 
     if now < reset:
         now -= timedelta(days=1)
@@ -96,37 +81,38 @@ def save_last(data):
 # データ取得
 # ------------------------
 def fetch_data():
-    data = requests.get(DATA_URL).json()
-    target_day = get_active_date()
+    res = requests.get(DATA_URL)
+    data = res.json()
 
+    target_day = get_active_date()
     pairs = []
 
-    for section, entries in data.items():
+    for section_name, entries in data.items():
         for entry in entries:
             missions = entry.get("missions", [])
 
-            loot = None
-            for d in entry.get("target_loot_by_day", []):
-                if d.get("day") == target_day:
-                    loot = d.get("target_loot", [])
+            target_loot = None
+            for day_data in entry.get("target_loot_by_day", []):
+                if day_data.get("day") == target_day:
+                    target_loot = day_data.get("target_loot", [])
                     break
 
-            if not loot:
+            if not target_loot:
                 continue
 
-            for i in range(min(len(missions), len(loot))):
+            for i in range(min(len(missions), len(target_loot))):
                 mission = missions[i]
-                item = loot[i]
+                loot = target_loot[i]
 
+                # 日本語化
                 mission = MISSION_JA.get(mission, mission)
-                item = translate_loot(item)
 
-                if not item:
+                if not loot:
                     continue
 
                 pairs.append({
                     "mission": mission,
-                    "loot": item
+                    "loot": loot
                 })
 
     return pairs[:10]
@@ -135,22 +121,29 @@ def fetch_data():
 # 投稿
 # ------------------------
 def post(webhook, pairs):
+    now = get_active_date()
+
     if not pairs:
         return
 
-    desc = ""
+    description = ""
     for i, p in enumerate(pairs, 1):
-        desc += f"{i}. {p['mission']} → {p['loot']}\n"
+        description += f"{i}. {p['mission']} → {p['loot']}\n"
 
     embed = {
         "title": "🎯 Division2 デイリー情報",
-        "description": desc,
+        "description": description,
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
-        "color": 16753920
+        "color": 16753920,
+        "footer": {
+            "text": f"更新日: {now}"
+        }
     }
 
     requests.post(webhook, json={"embeds": [embed]})
 
+# ------------------------
+# メイン
 # ------------------------
 def main():
     config = load_config()
@@ -159,10 +152,13 @@ def main():
     current = {"pairs": pairs}
     last = load_last()
 
-    if current != last:
-        for s in config["servers"]:
-            post(s["webhook"], pairs)
+    if current != last and pairs:
+        for server in config["servers"]:
+            post(server["webhook"], pairs)
+
         save_last(current)
+    else:
+        print("変更なし or データなし")
 
 if __name__ == "__main__":
     main()
