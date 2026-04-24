@@ -28,46 +28,57 @@ def save_last(data):
     with open(STATE_FILE, "w") as f:
         json.dump(data, f)
 
+# ------------------------
+# データ取得（完全修正版）
+# ------------------------
 def fetch_data():
     res = requests.get(DATA_URL)
     data = res.json()
 
     today = today_jst()
-
-    items = []
-    missions = []
+    pairs = []
 
     for section_name, entries in data.items():
         for entry in entries:
-            # ミッション
-            missions.extend(entry.get("missions", []))
+            missions = entry.get("missions", [])
 
-            # その日のターゲット装備
+            # 今日のターゲット装備を探す
+            target_loot = []
             for day_data in entry.get("target_loot_by_day", []):
                 if day_data.get("day") == today:
-                    items.extend(day_data.get("target_loot", []))
+                    target_loot = day_data.get("target_loot", [])
+                    break
 
-    return items[:10], missions[:10]
+            # ミッションと装備を紐付け
+            for i in range(len(missions)):
+                mission = missions[i] if i < len(missions) else "不明"
+                loot = target_loot[i] if i < len(target_loot) else "なし"
 
-def post(webhook, items, missions):
+                pairs.append({
+                    "mission": mission,
+                    "loot": loot
+                })
+
+    return pairs[:10]  # 上位10件
+
+# ------------------------
+# 投稿
+# ------------------------
+def post(webhook, pairs):
     now = today_jst()
+
+    description = ""
+    for i, p in enumerate(pairs, 1):
+        description += f"{i}. {p['mission']} → {p['loot']}\n"
+
+    if not description:
+        description = "データなし"
 
     embed = {
         "title": "🎯 Division2 デイリー情報",
+        "description": description,
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
         "color": 16753920,
-        "fields": [
-            {
-                "name": "📦 目標アイテム",
-                "value": "\n".join([f"{i+1}. {v}" for i, v in enumerate(items)]) or "なし",
-                "inline": False
-            },
-            {
-                "name": "🗺️ ミッション",
-                "value": "\n".join([f"{i+1}. {v}" for i, v in enumerate(missions)]) or "なし",
-                "inline": False
-            }
-        ],
         "footer": {
             "text": f"更新日: {now}"
         }
@@ -75,16 +86,20 @@ def post(webhook, items, missions):
 
     requests.post(webhook, json={"embeds": [embed]})
 
+# ------------------------
+# メイン処理
+# ------------------------
 def main():
     config = load_config()
-    items, missions = fetch_data()
+    pairs = fetch_data()
 
-    current = {"items": items, "missions": missions}
+    current = {"pairs": pairs}
     last = load_last()
 
     if current != last:
         for server in config["servers"]:
-            post(server["webhook"], items, missions)
+            post(server["webhook"], pairs)
+
         save_last(current)
     else:
         print("変更なし")
