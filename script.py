@@ -238,8 +238,12 @@ def main():
     config = load_config()
     sections = fetch_data()
 
-    current = {"sections": sections}
-    last = load_last()
+    if sections:
+        for server in config["servers"]:
+            post(server["webhook"], sections)
 
-if __name__ == "__main__":
+        # 状態保存はしてもしなくてもOK（今は意味ない）
+        save_last({"sections": sections})
+    else:
+        print("データなし")
     main()
