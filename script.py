@@ -51,18 +51,82 @@ MISSION_JA = {
 }
 
 # ------------------------
-# 17時リセット（ゲーム仕様）
+# loot日本語化
+# ------------------------
+LOOT_JA = {
+    # 武器
+    "assault rifle": "アサルトライフル",
+    "rifle": "ライフル",
+    "shotgun": "ショットガン",
+    "smg": "サブマシンガン",
+    "marksman rifle": "マークスマンライフル",
+    "lmg": "ライトマシンガン",
+    "pistol": "ピストル",
+
+    # 防具
+    "mask": "マスク",
+    "chest": "ボディアーマー",
+    "backpack": "バックパック",
+    "gloves": "グローブ",
+    "holster": "ホルスター",
+    "kneepads": "ニーパッド",
+
+    # ブランド
+    "Alps Summit Armaments": "アルプスサミット・アーマメント",
+    "Badger Tuff": "バッジャー・タフ",
+    "Gila Guard": "ギラ・ガード",
+    "Fenris Group AB": "フェンリスグループ社",
+    "Providence Defense": "プロビデンスディフェンス",
+    "Grupo Sombra S.A.": "グルーポソンブラ",
+    "Ceska Vyroba s.r.o.": "チェスカ・ヴィーロバ社",
+    "Douglas & Harding": "ダグラス＆ハーディング",
+    "Wyvern Wear": "ワイバーンウェア",
+    "China Light Industries": "チャイナライト",
+    "Hana-U Corporation": "ハナウ",
+    "Petrov Defense Group": "ペトロフディフェンス",
+    "Overlord Armaments": "オーバーロード",
+    "Sokolov Concern": "ソコロフ",
+    "Murakami Industries": "ムラカミ",
+    "Yaahl Gear": "ヤールギア",
+    "System Corruption": "システムコラプション",
+    "Future Initiative": "フューチャーイニシアティブ",
+    "Foundry Bulwark": "ファウンドリーブルワーク",
+    "Hunter's Fury": "ハンターズフューリー",
+    "Heartbreaker": "ハートブレイカー",
+    "Umbra Initiative": "アンブライニシアティブ",
+    "Striker's Battlegear": "ストライカーバトルギア",
+    "True Patriot": "トゥルーパトリオット",
+    "Hard Wired": "ハードワイヤード",
+    "Ongoing Directive": "オンゴーイングディレクティブ",
+    "Eclipse Protocol": "エクリプスプロトコル",
+    "Royal Guard": "ロイヤルガード"
+} 
+
+def translate_loot(name):
+    if not name:
+        return ""
+
+    key = name.strip().lower()
+
+    if key in LOOT_JA:
+        return LOOT_JA[key]
+
+    if name in LOOT_JA:
+        return LOOT_JA[name]
+
+    return name
+
+# ------------------------
+# 17時リセット
 # ------------------------
 def get_active_datetime():
     now = datetime.now(JST)
     reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
 
     if now < reset:
-        active = now - timedelta(days=1)
-    else:
-        active = now
+        now -= timedelta(days=1)
 
-    return active
+    return now
 
 def format_jst(dt):
     return dt.strftime("%Y/%m/%d %H:%M JST")
@@ -89,7 +153,7 @@ def fetch_data():
     res = requests.get(DATA_URL)
     data = res.json()
 
-    active = get_active_datetime().strftime("%Y-%m-%d")
+    target_day = get_active_datetime().strftime("%Y-%m-%d")
     result = {}
 
     for section_name, entries in data.items():
@@ -100,7 +164,7 @@ def fetch_data():
 
             target_loot = None
             for d in entry.get("target_loot_by_day", []):
-                if d.get("day") == active:
+                if d.get("day") == target_day:
                     target_loot = d.get("target_loot", [])
                     break
 
@@ -109,7 +173,7 @@ def fetch_data():
 
             for i in range(min(len(missions), len(target_loot))):
                 m = MISSION_JA.get(missions[i], missions[i])
-                l = target_loot[i]
+                l = translate_loot(target_loot[i])
 
                 if not l:
                     continue
@@ -122,16 +186,15 @@ def fetch_data():
     return result
 
 # ------------------------
-# UI整形（ゲーム風）
+# UI整形（ズレない）
 # ------------------------
 def format_section(title, pairs):
-    lines = []
-    lines.append("```")
-    lines.append("No | ミッション               | ターゲット")
-    lines.append("---+-------------------------+-----------")
+    lines = ["```"]
 
     for i, (m, l) in enumerate(pairs, 1):
-        lines.append(f"{i:>2} | {m[:20]:<20} | {l}")
+        lines.append(f"[{i}] {m}")
+        lines.append(f"    └ 🎯 {l}")
+        lines.append("")
 
     lines.append("```")
 
@@ -158,7 +221,7 @@ def post(webhook, sections):
         "color": 0xFF6A00,
         "fields": [],
         "footer": {
-            "text": f"更新: {format_jst(now)} / リセット基準: {format_jst(active.replace(hour=17))}"
+            "text": f"更新: {format_jst(now)} / リセット: 毎日17:00 JST"
         }
     }
 
