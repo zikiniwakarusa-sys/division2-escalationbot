@@ -2,7 +2,7 @@ name: division2 bot
 
 on:
   schedule:
-    - cron: "37 5 * * *"
+    - cron: "39 6 * * *"
   workflow_dispatch:
 
 jobs:
