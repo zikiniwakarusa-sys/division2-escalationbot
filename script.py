@@ -215,8 +215,8 @@ def post(webhook, sections):
         return
 
     embed = {
-        "title": "🟧 Division 2 デイリーターゲット",
-        "description": "```diff\n+ TARGETED LOOT ACTIVE\n```",
+        "title": "🟧 Division2 エスカレーション",
+        "description": "```diff\n+ ESCALATION TARGETED LOOT UPDATED\n```",
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
         "color": 0xFF6A00,
         "fields": [],
