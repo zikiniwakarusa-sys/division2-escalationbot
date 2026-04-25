@@ -11,12 +11,6 @@ STATE_FILE = "last.json"
 JST = timezone(timedelta(hours=9))
 
 # ------------------------
-# 画像設定（ここ変えるだけ）
-# ------------------------
-THUMBNAIL_URL = "https://i.imgur.com/8Km9tLL.png"
-IMAGE_URL = "https://i.imgur.com/Z6XnF7T.png"
-
-# ------------------------
 # ミッション日本語化
 # ------------------------
 MISSION_JA = {
@@ -60,6 +54,7 @@ MISSION_JA = {
 # loot日本語化
 # ------------------------
 LOOT_JA = {
+    # 武器
     "assault rifle": "アサルトライフル",
     "rifle": "ライフル",
     "shotgun": "ショットガン",
@@ -67,32 +62,71 @@ LOOT_JA = {
     "marksman rifle": "マークスマンライフル",
     "lmg": "ライトマシンガン",
     "pistol": "ピストル",
+
+    # 防具
     "mask": "マスク",
     "chest": "ボディアーマー",
     "backpack": "バックパック",
     "gloves": "グローブ",
     "holster": "ホルスター",
     "kneepads": "ニーパッド",
+
+    # ブランド
     "Alps Summit Armaments": "アルプスサミット・アーマメント",
-    "Royal Works": "ロイヤルワークス"
-}
+    "Badger Tuff": "バッジャー・タフ",
+    "Gila Guard": "ギラ・ガード",
+    "Fenris Group AB": "フェンリスグループ社",
+    "Providence Defense": "プロビデンスディフェンス",
+    "Grupo Sombra S.A.": "グルーポソンブラ",
+    "Ceska Vyroba s.r.o.": "チェスカ・ヴィーロバ社",
+    "Douglas & Harding": "ダグラス＆ハーディング",
+    "Wyvern Wear": "ワイバーンウェア",
+    "China Light Industries": "チャイナライト",
+    "Hana-U Corporation": "ハナウ",
+    "Petrov Defense Group": "ペトロフディフェンス",
+    "Overlord Armaments": "オーバーロード",
+    "Sokolov Concern": "ソコロフ",
+    "Murakami Industries": "ムラカミ",
+    "Yaahl Gear": "ヤールギア",
+    "System Corruption": "システムコラプション",
+    "Future Initiative": "フューチャーイニシアティブ",
+    "Foundry Bulwark": "ファウンドリーブルワーク",
+    "Hunter's Fury": "ハンターズフューリー",
+    "Heartbreaker": "ハートブレイカー",
+    "Umbra Initiative": "アンブライニシアティブ",
+    "Striker's Battlegear": "ストライカーバトルギア",
+    "True Patriot": "トゥルーパトリオット",
+    "Hard Wired": "ハードワイヤード",
+    "Ongoing Directive": "オンゴーイングディレクティブ",
+    "Eclipse Protocol": "エクリプスプロトコル",
+    "Royal Works": "ロイヤルワークス",
+    "Core Strength": "コア強度"
+} 
 
 def translate_loot(name):
     if not name:
         return ""
+
     key = name.strip().lower()
+
     if key in LOOT_JA:
         return LOOT_JA[key]
+
     if name in LOOT_JA:
         return LOOT_JA[name]
+
     return name
 
 # ------------------------
+# 17時リセット
+# ------------------------
 def get_active_datetime():
     now = datetime.now(JST)
-    reset = now.replace(hour=17, minute=0)
+    reset = now.replace(hour=17, minute=0, second=0, microsecond=0)
+
     if now < reset:
         now -= timedelta(days=1)
+
     return now
 
 def format_jst(dt):
@@ -113,6 +147,8 @@ def save_last(data):
     with open(STATE_FILE, "w") as f:
         json.dump(data, f)
 
+# ------------------------
+# データ取得
 # ------------------------
 def fetch_data():
     res = requests.get(DATA_URL)
@@ -139,8 +175,10 @@ def fetch_data():
             for i in range(min(len(missions), len(target_loot))):
                 m = MISSION_JA.get(missions[i], missions[i])
                 l = translate_loot(target_loot[i])
+
                 if not l:
                     continue
+
                 section_pairs.append((m, l))
 
         if section_pairs:
@@ -149,12 +187,16 @@ def fetch_data():
     return result
 
 # ------------------------
+# UI整形（ズレない）
+# ------------------------
 def format_section(title, pairs):
     lines = ["```"]
+
     for i, (m, l) in enumerate(pairs, 1):
         lines.append(f"[{i}] {m}")
         lines.append(f"    └ 🎯 {l}")
         lines.append("")
+
     lines.append("```")
 
     return {
@@ -164,19 +206,23 @@ def format_section(title, pairs):
     }
 
 # ------------------------
+# 投稿
+# ------------------------
 def post(webhook, sections):
     now = datetime.now(JST)
+    active = get_active_datetime()
+
+    if not sections:
+        return
 
     embed = {
         "title": "🟧 Division2 エスカレーション",
-        "description": "```diff\n+ TARGETED LOOT ACTIVE\n```",
+        "description": "```diff\n+ ESCALATION TARGETED LOOT UPDATED\n```",
         "url": "https://hi-dep.github.io/division2/?view=event&lang=ja",
         "color": 0xFF6A00,
         "fields": [],
-        "thumbnail": {"url": THUMBNAIL_URL},
-        "image": {"url": IMAGE_URL},
         "footer": {
-            "text": f"更新: {format_jst(now)}"
+            "text": f"更新: {format_jst(now)} / リセット: 毎日17:00 JST"
         }
     }
 
@@ -185,6 +231,8 @@ def post(webhook, sections):
 
     requests.post(webhook, json={"embeds": [embed]})
 
+# ------------------------
+# メイン
 # ------------------------
 def main():
     config = load_config()
