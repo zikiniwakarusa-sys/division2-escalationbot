@@ -99,7 +99,7 @@ LOOT_JA = {
     "Hard Wired": "ハードワイヤード",
     "Ongoing Directive": "オンゴーイングディレクティブ",
     "Eclipse Protocol": "エクリプスプロトコル",
-    "Royal Works": "ロイヤルガード",
+    "Royal Works": "ロイヤルワークス",
     "Core Strength": "コア強度"
 } 
 
