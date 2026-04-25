@@ -238,12 +238,6 @@ def main():
     config = load_config()
     sections = fetch_data()
 
-    if not sections:
-        print("データなし")
-        return
-
     for server in config["servers"]:
         post(server["webhook"], sections)
-
-    save_last({"sections": sections})
     main()
