@@ -241,13 +241,5 @@ def main():
     current = {"sections": sections}
     last = load_last()
 
-    if :
-        for server in config["servers"]:
-            post(server["webhook"], sections)
-
-        save_last(current)
-    else:
-        print("変更なし or データなし")
-
 if __name__ == "__main__":
     main()
