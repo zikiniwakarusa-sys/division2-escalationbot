@@ -99,7 +99,8 @@ LOOT_JA = {
     "Hard Wired": "ハードワイヤード",
     "Ongoing Directive": "オンゴーイングディレクティブ",
     "Eclipse Protocol": "エクリプスプロトコル",
-    "Royal Guard": "ロイヤルガード"
+    "Royal Works": "ロイヤルガード",
+    "Core Strength": "コア強度"
 } 
 
 def translate_loot(name):
