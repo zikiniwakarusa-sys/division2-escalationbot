@@ -241,7 +241,7 @@ def main():
     current = {"sections": sections}
     last = load_last()
 
-    if current != last and sections:
+    if :
         for server in config["servers"]:
             post(server["webhook"], sections)
 
