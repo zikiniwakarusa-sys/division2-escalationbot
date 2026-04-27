@@ -3,10 +3,6 @@
     {
       "name": "カムイのサーバー",
       "webhook": "https://discord.com/api/webhooks/1497372121859620924/DwEJ35UMFrayW3SoKeqCWqpMjhkXk8AgC7OE4QOu50JQyTJ_5FP-Mvxjkw1vX5FKp0BD"
-    },
-    {
-      "name": "角待ち教団教祖のサーバー",
-      "webhook": "https://discord.com/api/webhooks/1497389931893362821/qp470uborWkHnJ4znKDR28CCRN9t4k-jCZmLlgcKm6gPUw94FnYsJXVBdlQ-r2JpWek8"
     }
   ]
 }
