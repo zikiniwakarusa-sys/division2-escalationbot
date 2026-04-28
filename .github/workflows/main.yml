@@ -2,7 +2,7 @@ name: division2 bot
 
 on:
   repository_dispatch:
-    types:[run-bot]
+    types: [run-bot]
   workflow_dispatch:
 
 jobs:
@@ -11,11 +11,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4 # ←ここだけ変更
+      
       - uses: actions/setup-python@5
         with: 
           python-version: "3.11"
           
-
       - run: pip install requests
 
       - run: python script.py
