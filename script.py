@@ -130,9 +130,9 @@ LOOT_JA = {
     "Striker's Battlegear": "ストライカーバトルギア",
     "System Corruption": "システムコラプション",
     "Tip Of The Spear": "スピアーティップ",
-    "Tipping Scale"： "ティッピングスケール",
-　　"True Patriot": "トゥルーパトリオット",
-　　"Umbra Initiative": "アンブライニシアティブ",
+    "Tipping Scale": "ティッピングスケール",
+    "True Patriot": "トゥルーパトリオット",
+    "Umbra Initiative": "アンブライニシアティブ",
     "Virtuoso": "ヴィルトゥオーゾ"
 } 
 
