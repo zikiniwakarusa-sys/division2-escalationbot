@@ -72,7 +72,7 @@ LOOT_JA = {
     "kneepads": "ニーパッド",
 
     # ブランド
-　  "Airaldi Holdings": "アイラルディホールディング",
+    "Airaldi Holdings": "アイラルディホールディング",
     "Alps Summit Armaments": "アルプスサミット・アーマメント",
     "Badger Tuff": "バッジャー・タフ",
     "Belstone Armory": "ベルストーンアーマリー",
