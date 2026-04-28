@@ -1,8 +1,8 @@
 name: division2 bot
 
 on:
-  schedule:
-    - cron: "0/5 * * * *"
+  repository_dispatch:
+    types:[run-bot]
   workflow_dispatch:
 
 jobs:
@@ -10,7 +10,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5  # ←ここだけ変更
+      - uses: actions/checkout@v4 # ←ここだけ変更
+      - uses: actions/setup-python@5
+        with: 
+          python-version: "3.11"
+          
 
       - run: pip install requests
 
