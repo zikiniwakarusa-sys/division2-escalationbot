@@ -55,7 +55,7 @@ MISSION_JA = {
 # ------------------------
 LOOT_JA = {
     # 武器
-    "assault rifle": "アサルトライフル",
+    "ar": "アサルトライフル",
     "rifle": "ライフル",
     "shotgun": "ショットガン",
     "smg": "サブマシンガン",
@@ -71,13 +71,17 @@ LOOT_JA = {
     "holster": "ホルスター",
     "kneepads": "ニーパッド",
 
+    # MOD
+    "Gear MOD": "装備MOD",
+    "Skill MOD": "スキルMOD",
+
     # ブランド
     "Airaldi Holdings": "アイラルディホールディング",
     "Alps Summit Armaments": "アルプスサミット・アーマメント",
     "Badger Tuff": "バッジャー・タフ",
     "Belstone Armory": "ベルストーンアーマリー",
     "Brazos de Arcabuz": "ブラソス・デ・アルカブース",
-    "Ceska Vyroba s.r.o.": "チェスカ・ヴィーロバ社",
+    "Česká Výroba s.r.o.": "チェスカ・ヴィーロバ社",
     "China Light Industries Corporation": "チャイナライト",
     "Douglas & Harding": "ダグラス&ハーディング",
     "Electrique": "エレクトリック",
@@ -102,7 +106,7 @@ LOOT_JA = {
     "Sokolov Concern": "ソコロフ社",
     "Unit Alloys": "ユニット合金",
     "Urban Lookout": "アーバンルックアウト",
-    "Uzina Gatica": "ウジーナゲーティカ",
+    "Uzina Getica": "ウジーナゲーティカ",
     "Walker, Harris & Co.": "ウォーカー・ハリス社",
     "Yaahl Gear": "ヤールギア",
     "Wyvern Wear": "ワイバーンウェア",
@@ -124,8 +128,8 @@ LOOT_JA = {
     "Measured Assembly": "メジャードアセンブリー",
     "Negotiator's Dilemma": "ネゴシエータージレンマ",
     "Ongoing Directive": "オンゴーイングディレクティブ",
-    "Exuro": "イクスロ",
-    "Refator": "リファクター",
+    "Ortiz: Exuro": "イクスロ",
+    "Refactor": "リファクター",
     "Rigger":"リガー",
     "Striker's Battlegear": "ストライカーバトルギア",
     "System Corruption": "システムコラプション",
