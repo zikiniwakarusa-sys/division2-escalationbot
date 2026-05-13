@@ -59,7 +59,7 @@ LOOT_JA = {
     "rifle": "ライフル",
     "shotgun": "ショットガン",
     "smg": "サブマシンガン",
-    "marksman rifle": "マークスマンライフル",
+    "mmr": "マークスマンライフル",
     "lmg": "ライトマシンガン",
     "pistol": "ピストル",
 
@@ -133,8 +133,8 @@ LOOT_JA = {
     "Rigger":"リガー",
     "Striker's Battlegear": "ストライカーバトルギア",
     "System Corruption": "システムコラプション",
-    "Tip Of The Spear": "スピアーティップ",
-    "Tipping Scale": "ティッピングスケール",
+    "Tip of the spear": "スピアーティップ",
+    "Tipping Scales": "ティッピングスケール",
     "True Patriot": "トゥルーパトリオット",
     "Umbra Initiative": "アンブライニシアティブ",
     "Virtuoso": "ヴィルトゥオーゾ"
