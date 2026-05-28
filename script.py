@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 DATA_URL = "https://hi-dep.github.io/division2/data/event/index.json"
 
-CONFIG_FILE = "config_debug.json"
+CONFIG_FILE = "config.json"
 STATE_FILE = "last.json"
 
 JST = timezone(timedelta(hours=9))
@@ -89,7 +89,7 @@ LOOT_JA = {
     "Fenris Group AB": "フェンリスグループ社",
     "Gila Guard": "ギラ・ガード",
     "Grupo Sombra S.A.": "グルーポソンブラ",
-    "Golan Gear Ltd": "ゴラン・ギア",
+    "Golan Gear": "ゴラン・ギア",
     "Habsburg Guard": "ハプスブルクガード",
     "Hana-U Corporation": "ハナウ",
     "Imminence Armaments":"緊急装備",
@@ -133,7 +133,7 @@ LOOT_JA = {
     "Rigger":"リガー",
     "Striker's Battlegear": "ストライカーバトルギア",
     "System Corruption": "システムコラプション",
-    "Tip of the Spear": "スピアーティップ",
+    "Tip of the spear": "スピアーティップ",
     "Tipping Scales": "ティッピングスケール",
     "True Patriot": "トゥルーパトリオット",
     "Umbra Initiative": "アンブライニシアティブ",
