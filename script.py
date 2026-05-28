@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 DATA_URL = "https://hi-dep.github.io/division2/data/event/index.json"
 
-CONFIG_FILE = "config.json"
+CONFIG_FILE = "config_debug.json"
 STATE_FILE = "last.json"
 
 JST = timezone(timedelta(hours=9))
